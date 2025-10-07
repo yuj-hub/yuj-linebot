@@ -8,7 +8,7 @@ app.use(bodyParser.json());
 const LINE_ACCESS_TOKEN = process.env.LINE_ACCESS_TOKEN;
 
 app.post("/webhook", async (req, res) => {
-  console.log("Webhook受信:", req.body);
+  console.log("Webhook受信:", JSON.stringify(req.body, null, 2));
   res.sendStatus(200);
 
   try {
@@ -61,6 +61,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Yuj Bot is running on port ${PORT}`);
 });
+
 
 
 
