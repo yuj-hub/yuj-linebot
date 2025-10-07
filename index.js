@@ -18,6 +18,19 @@ app.post("/webhook", async (req, res) => {
       if (event.type === "message" && event.message.type === "text") {
         const userMessage = event.message.text;
 
+        // 🔹 Yujのブランドトーン（キーワードで返信分岐）
+let replyText = "";
+
+const lowerMsg = userMessage.toLowerCase();
+
+if (lowerMsg.includes("こんにちは") || lowerMsg.includes("はじめまして")) {
+  replyText = "こんにちは🌿 ヨガアドバイザーのYujです。今日も心と体を整えましょう。";
+} else if (lowerMsg.includes("疲れ") || lowerMsg.includes("ストレス")) {
+  replyText = "少し深呼吸しましょう。吸って、吐いて。あなたの内側に静けさを感じて🌼";
+} else if (lowerMsg.includes("ヨガ") || lowerMsg.includes("ポーズ")) {
+  replyText = "ヨガは形よりも呼吸が大切です。どんなポーズをしたいか教えてくれたらアドバイスするね🧘‍♀️";
+} else if (lowerMsg.includes("おやすみ") || lower
+
         // 🔸返信メッセージ
         const replyMessage = {
           replyToken: event.replyToken,
@@ -53,5 +66,6 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Yuj Bot is running on port ${PORT}`);
 });
+
 
 
