@@ -29,7 +29,11 @@ if (lowerMsg.includes("こんにちは") || lowerMsg.includes("はじめまし�
   replyText = "少し深呼吸しましょう。吸って、吐いて。あなたの内側に静けさを感じて🌼";
 } else if (lowerMsg.includes("ヨガ") || lowerMsg.includes("ポーズ")) {
   replyText = "ヨガは形よりも呼吸が大切です。どんなポーズをしたいか教えてくれたらアドバイスするね🧘‍♀️";
-} else if (lowerMsg.includes("おやすみ") || lower
+} else if (lowerMsg.includes("おやすみ") || lowerMsg.includes("寝る")) {
+    replyText = "ゆっくり休んでね🌙 明日のあなたもきっと穏やかに過ごせます。";
+  } else {
+    replyText = `🧘‍♀️「${userMessage}」...素敵な言葉ですね。\n心を落ち着かせて、自分を感じてみてください💫`;
+  }
 
         // 🔸返信メッセージ
         const replyMessage = {
@@ -66,6 +70,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Yuj Bot is running on port ${PORT}`);
 });
+
 
 
 
