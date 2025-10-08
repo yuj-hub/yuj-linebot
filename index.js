@@ -54,6 +54,32 @@ app.post("/webhook", async (req, res) => {
           );
           return;
         }
+// 🎯 今日のひとこと 機能
+if (userMessage === "今日のひとこと") {
+  const messages = [
+    "🌿 深呼吸して、心をリセットしてみましょう。",
+    "🌸 できない日があっても大丈夫。続けることが大切です。",
+    "🌞 あなたのペースで進めば、それで十分。",
+    "🪷 今日も小さな一歩を大切にしてね。",
+    "💫 今のあなたは、もう十分頑張っています。"
+  ];
+  const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+
+  const replyMessage = {
+    replyToken: event.replyToken,
+    messages: [
+      { type: "text", text: `今日のひとこと 🌿\n\n${randomMessage}` }
+    ],
+  };
+
+  await axios.post("https://api.line.me/v2/bot/message/reply", replyMessage, {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${LINE_ACCESS_TOKEN}`,
+    },
+  });
+  return; // 処理を終了（AIに渡さない）
+}
 
         // 🔹 AI応答の基本プロンプト
         let systemPrompt =
@@ -133,6 +159,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Yuj Bot with Emotion-Aware Yoga Coach is running on port ${PORT}`);
 });
+
 
 
 
