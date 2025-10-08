@@ -72,6 +72,53 @@ app.post("/webhook", async (req, res) => {
             " その内容に合わせた前向きなメッセージを短く伝えてください。";
         }
 
+// 🔸 ランダム＆リクエスト対応「今日のひとこと」
+const encouragements = [
+  "呼吸が整うと、心も整います🍃",
+  "無理せず、深呼吸から始めましょう🧘‍♀️",
+  "少しでも体を動かしたあなた、素晴らしいです🌿",
+  "焦らず、自分のペースでいいんです🌸",
+  "あなたの中に、すでに強さがあります☀️",
+  "姿勢を整えると、気持ちも軽くなります✨",
+  "今日も自分を大切にできていますか？💗",
+  "短い時間でも“今”に意識を向けてみましょう🌼",
+  "穏やかな心は、穏やかな呼吸から🍀",
+  "あなたは今日もちゃんと頑張っています🌞"
+];
+
+let dailyQuote = "";
+
+// 🔹 ① ユーザーが「今日のひとこと」と言った場合 → 必ず表示
+if (userMessage.includes("今日のひとこと")) {
+  const randomIndex = Math.floor(Math.random() * encouragements.length);
+  const message = encouragements[randomIndex];
+
+  const replyMessage = {
+    replyToken: event.replyToken,
+    messages: [
+      {
+        type: "text",
+        text: `🌸 今日のひとこと 🌸\n${message}`
+      }
+    ]
+  };
+
+  await axios.post("https://api.line.me/v2/bot/message/reply", replyMessage, {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${LINE_ACCESS_TOKEN}`,
+    },
+  });
+  return; // ここで終了（AI呼び出しには進まない）
+}
+
+// 🔹 ② 通常メッセージ時 → 20%の確率で追加
+if (Math.random() < 0.2) {
+  const randomIndex = Math.floor(Math.random() * encouragements.length);
+  dailyQuote = "\n\n🌸 今日のひとこと 🌸\n" + encouragements[randomIndex];
+}
+
+        
         // 🧘‍♀️ ChatGPTへのリクエスト
         const aiResponse = await axios.post(
           "https://api.openai.com/v1/chat/completions",
@@ -90,7 +137,8 @@ app.post("/webhook", async (req, res) => {
           }
         );
 
-        const aiText = aiResponse.data.choices[0].message.content;
+        const aiText = aiResponse.data.choices[0].message.content + (dailyQuote || "");
+
 
         // 🔹 LINEへ返信
         const replyMessage = {
@@ -159,3 +207,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Yuj Bot with AI Yoga Coach is running on port ${PORT}`);
 });
+
