@@ -16,6 +16,41 @@ app.post("/webhook", async (req, res) => {
     for (const event of req.body.events) {
       if (event.type === "message" && event.message.type === "text") {
         const userMessage = event.message.text;
+
+// 💎 有料登録用の合言葉
+const PAID_CODE = "YUJ500"; // note限定で告知する合言葉
+
+// 🔹 JSONファイル操作
+import fs from "fs";
+const USERS_FILE = "./users.json";
+if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, JSON.stringify({}));
+
+const users = JSON.parse(fs.readFileSync(USERS_FILE, "utf-8"));
+const userId = event.source.userId;
+
+// 🧘‍♀️ 有料ユーザー登録（合言葉認証）
+if (userMessage === PAID_CODE) {
+  users[userId] = { ...users[userId], isPaid: true };
+  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+
+  const replyMessage = {
+    replyToken: event.replyToken,
+    messages: [
+      {
+        type: "text",
+        text: "🌸 プレミアム登録ありがとうございます！\nこれから毎日、心を整えるメッセージをお届けします💌",
+      },
+    ],
+  };
+
+  await axios.post("https://api.line.me/v2/bot/message/reply", replyMessage, {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${LINE_ACCESS_TOKEN}`,
+    },
+  });
+  return;
+}
    
 // 🧘‍♀️ 無料トライアル判定ロジック
     const fs = require('fs');
@@ -36,7 +71,7 @@ app.post("/webhook", async (req, res) => {
     const diffDays = (now - startDate) / (1000 * 60 * 60 * 24);
     const withinTrial = diffDays <= 3;
 
-    if (!withinTrial) {
+   if (!withinTrial && !users[userId]?.isPaid) {
       const replyMessage = {
         replyToken: event.replyToken,
         messages: [
@@ -198,6 +233,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Yuj Bot with Emotion-Aware Yoga Coach is running on port ${PORT}`);
 });
+
 
 
 
