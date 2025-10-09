@@ -16,6 +16,44 @@ app.post("/webhook", async (req, res) => {
     for (const event of req.body.events) {
       if (event.type === "message" && event.message.type === "text") {
         const userMessage = event.message.text;
+    // 🧘‍♀️ 無料トライアル判定ロジック
+    const fs = require('fs');
+    const USERS_FILE = './users.json';
+    if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, JSON.stringify({}));
+
+    const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf-8'));
+    const userId = event.source.userId;
+
+    // 初回登録（初めてメッセージした日を保存）
+    if (!users[userId]) {
+      users[userId] = { startDate: new Date().toISOString() };
+      fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+    }
+
+    const startDate = new Date(users[userId].startDate);
+    const now = new Date();
+    const diffDays = (now - startDate) / (1000 * 60 * 60 * 24);
+    const withinTrial = diffDays <= 3;
+
+    if (!withinTrial) {
+      const replyMessage = {
+        replyToken: event.replyToken,
+        messages: [
+          {
+            type: "text",
+            text: `🕊️ 無料トライアル期間が終了しました。\n\nこれまで一緒に心を整えてくれてありがとう🌸\nもしYujとこれからも穏やかな時間を続けたい方は\nプレミアムプランをご検討ください🧘‍♀️\n\n👉 月額500円で「毎日のひとこと」や\n　「おすすめポーズ」をいつでも利用できます。\n\nhttps://example.com/premium`
+          }
+        ]
+      };
+
+      await axios.post("https://api.line.me/v2/bot/message/reply", replyMessage, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${LINE_ACCESS_TOKEN}`,
+        },
+      });
+      return; // 👈 ここで処理終了（AIなどには渡さない）
+    }
 
         // 🔸「ヨガ」または「メニュー」入力でボタン表示
         if (userMessage === "ヨガ" || userMessage === "メニュー") {
@@ -159,6 +197,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Yuj Bot with Emotion-Aware Yoga Coach is running on port ${PORT}`);
 });
+
 
 
 
