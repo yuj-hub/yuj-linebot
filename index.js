@@ -1,11 +1,16 @@
 import express from "express";
 import axios from "axios";
+import fs from "fs"; // ← ここにまとめてOK
 
 const app = express();
 app.use(express.json());
 
 const LINE_ACCESS_TOKEN = process.env.LINE_ACCESS_TOKEN;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
+// JSONファイルパス
+const USERS_FILE = "./users.json";
+if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, JSON.stringify({}));
 
 // Webhook受信
 app.post("/webhook", async (req, res) => {
@@ -16,80 +21,66 @@ app.post("/webhook", async (req, res) => {
     for (const event of req.body.events) {
       if (event.type === "message" && event.message.type === "text") {
         const userMessage = event.message.text;
+        const userId = event.source.userId;
+        const users = JSON.parse(fs.readFileSync(USERS_FILE, "utf-8"));
 
-// 💎 有料登録用の合言葉
-const PAID_CODE = "YUJ500"; // note限定で告知する合言葉
+        // 💎 有料登録用の合言葉
+        const PAID_CODE = "YUJ500";
 
-// 🔹 JSONファイル操作
-import fs from "fs";
-const USERS_FILE = "./users.json";
-if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, JSON.stringify({}));
+        // 🧘‍♀️ 有料ユーザー登録（合言葉認証）
+        if (userMessage === PAID_CODE) {
+          users[userId] = { ...users[userId], isPaid: true };
+          fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
 
-const users = JSON.parse(fs.readFileSync(USERS_FILE, "utf-8"));
-const userId = event.source.userId;
+          const replyMessage = {
+            replyToken: event.replyToken,
+            messages: [
+              {
+                type: "text",
+                text: "🌸 プレミアム登録ありがとうございます！\nこれから毎日、心を整えるメッセージをお届けします💌",
+              },
+            ],
+          };
 
-// 🧘‍♀️ 有料ユーザー登録（合言葉認証）
-if (userMessage === PAID_CODE) {
-  users[userId] = { ...users[userId], isPaid: true };
-  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+          await axios.post("https://api.line.me/v2/bot/message/reply", replyMessage, {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${LINE_ACCESS_TOKEN}`,
+            },
+          });
+          return;
+        }
 
-  const replyMessage = {
-    replyToken: event.replyToken,
-    messages: [
-      {
-        type: "text",
-        text: "🌸 プレミアム登録ありがとうございます！\nこれから毎日、心を整えるメッセージをお届けします💌",
-      },
-    ],
-  };
+        // 🧘‍♀️ 無料トライアル判定ロジック
+        if (!users[userId]) {
+          users[userId] = { startDate: new Date().toISOString() };
+          fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+        }
 
-  await axios.post("https://api.line.me/v2/bot/message/reply", replyMessage, {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${LINE_ACCESS_TOKEN}`,
-    },
-  });
-  return;
-}
-   
-// 🧘‍♀️ 無料トライアル判定ロジック
-    const fs = require('fs');
-    const USERS_FILE = './users.json';
-    if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, JSON.stringify({}));
+        const startDate = new Date(users[userId].startDate);
+        const now = new Date();
+        const diffDays = (now - startDate) / (1000 * 60 * 60 * 24);
+        const withinTrial = diffDays <= 3;
 
-    const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf-8'));
-    const userId = event.source.userId;
+        if (!withinTrial && !users[userId]?.isPaid) {
+          const replyMessage = {
+            replyToken: event.replyToken,
+            messages: [
+              {
+                type: "text",
+                text: `🕊️ 無料トライアル期間が終了しました。\n\nこれまで一緒に心を整えてくれてありがとう🌸\nもしYujとこれからも穏やかな時間を続けたい方は\nプレミアムプランをご検討ください🧘‍♀️\n\n👉 月額500円で「毎日のひとこと」や\n　「おすすめポーズ」をいつでも利用できます。\n\nhttps://example.com/premium`,
+              },
+            ],
+          };
 
-    // 初回登録（初めてメッセージした日を保存）
-    if (!users[userId]) {
-      users[userId] = { startDate: new Date().toISOString() };
-      fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
-    }
-
-    const startDate = new Date(users[userId].startDate);
-    const now = new Date();
-    const diffDays = (now - startDate) / (1000 * 60 * 60 * 24);
-    const withinTrial = diffDays <= 3;
-
-   if (!withinTrial && !users[userId]?.isPaid) {
-      const replyMessage = {
-        replyToken: event.replyToken,
-        messages: [
-          {
-            type: "text",
-            text: `🕊️ 無料トライアル期間が終了しました。\n\nこれまで一緒に心を整えてくれてありがとう🌸\nもしYujとこれからも穏やかな時間を続けたい方は\nプレミアムプランをご検討ください🧘‍♀️\n\n👉 月額500円で「毎日のひとこと」や\n　「おすすめポーズ」をいつでも利用できます。\n\nhttps://example.com/premium`
-          }
-        ]
-      };
-
-      await axios.post("https://api.line.me/v2/bot/message/reply", replyMessage, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${LINE_ACCESS_TOKEN}`,
-        },
-      });
-      return; // 👈 ここで処理終了（AIなどには渡さない）
-    }
+          await axios.post("https://api.line.me/v2/bot/message/reply", replyMessage, {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${LINE_ACCESS_TOKEN}`,
+            },
+          });
+          return;
+        }
 
         // 🔸「ヨガ」または「メニュー」入力でボタン表示
         if (userMessage === "ヨガ" || userMessage === "メニュー") {
@@ -116,50 +107,44 @@ if (userMessage === PAID_CODE) {
             ],
           };
 
-          await axios.post(
-            "https://api.line.me/v2/bot/message/reply",
-            replyMessage,
-            {
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${LINE_ACCESS_TOKEN}`,
-              },
-            }
-          );
+          await axios.post("https://api.line.me/v2/bot/message/reply", replyMessage, {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${LINE_ACCESS_TOKEN}`,
+            },
+          });
           return;
         }
-// 🎯 今日のひとこと 機能
-if (userMessage === "今日のひとこと") {
-  const messages = [
-    "🌿 深呼吸して、心をリセットしてみましょう。",
-    "🌸 できない日があっても大丈夫。続けることが大切です。",
-    "🌞 あなたのペースで進めば、それで十分。",
-    "🪷 今日も小さな一歩を大切にしてね。",
-    "💫 今のあなたは、もう十分頑張っています。"
-  ];
-  const randomMessage = messages[Math.floor(Math.random() * messages.length)];
 
-  const replyMessage = {
-    replyToken: event.replyToken,
-    messages: [
-      { type: "text", text: `今日のひとこと 🌿\n\n${randomMessage}` }
-    ],
-  };
+        // 🎯 今日のひとこと 機能
+        if (userMessage === "今日のひとこと") {
+          const messages = [
+            "🌿 深呼吸して、心をリセットしてみましょう。",
+            "🌸 できない日があっても大丈夫。続けることが大切です。",
+            "🌞 あなたのペースで進めば、それで十分。",
+            "🪷 今日も小さな一歩を大切にしてね。",
+            "💫 今のあなたは、もう十分頑張っています。",
+          ];
+          const randomMessage = messages[Math.floor(Math.random() * messages.length)];
 
-  await axios.post("https://api.line.me/v2/bot/message/reply", replyMessage, {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${LINE_ACCESS_TOKEN}`,
-    },
-  });
-  return; // 処理を終了（AIに渡さない）
-}
+          const replyMessage = {
+            replyToken: event.replyToken,
+            messages: [{ type: "text", text: `今日のひとこと 🌿\n\n${randomMessage}` }],
+          };
 
-        // 🔹 AI応答の基本プロンプト
+          await axios.post("https://api.line.me/v2/bot/message/reply", replyMessage, {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${LINE_ACCESS_TOKEN}`,
+            },
+          });
+          return;
+        }
+
+        // 🔹 AI応答（ChatGPT）
         let systemPrompt =
           "あなたは優しいヨガインストラクターです。初心者にもわかりやすく、心が落ち着く言葉で答えてください。";
 
-        // 🔹 ヨガのモード別補足
         if (userMessage.includes("朝")) {
           systemPrompt += " 朝におすすめの軽いストレッチを紹介してください。";
         } else if (userMessage.includes("夜")) {
@@ -172,7 +157,6 @@ if (userMessage === "今日のひとこと") {
           systemPrompt += " その内容に合わせた前向きなメッセージを短く伝えてください。";
         }
 
-        // 🔹 感情トーン分析ロジック
         if (/疲|だる|眠|しんど|つら|落ち/.test(userMessage)) {
           systemPrompt +=
             " ユーザーは少し疲れているようです。優しく共感し、励ますように答えてください。";
@@ -184,7 +168,6 @@ if (userMessage === "今日のひとこと") {
             " ユーザーは不安を感じています。安心できるような落ち着いたトーンで返してください。";
         }
 
-        // 🧘‍♀️ ChatGPTへのリクエスト
         const aiResponse = await axios.post(
           "https://api.openai.com/v1/chat/completions",
           {
@@ -204,7 +187,6 @@ if (userMessage === "今日のひとこと") {
 
         const aiText = aiResponse.data.choices[0].message.content;
 
-        // 🔹 LINEへ返信
         const replyMessage = {
           replyToken: event.replyToken,
           messages: [{ type: "text", text: aiText }],
@@ -231,12 +213,5 @@ app.get("/", (req, res) => {
 // ✅ ポート設定
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`✅ Yuj Bot with Emotion-Aware Yoga Coach is running on port ${PORT}`);
+  console.log(`✅ Yuj Bot is running on port ${PORT}`);
 });
-
-
-
-
-
-
-
