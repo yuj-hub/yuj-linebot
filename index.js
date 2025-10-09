@@ -16,7 +16,8 @@ app.post("/webhook", async (req, res) => {
     for (const event of req.body.events) {
       if (event.type === "message" && event.message.type === "text") {
         const userMessage = event.message.text;
-    // 🧘‍♀️ 無料トライアル判定ロジック
+   
+// 🧘‍♀️ 無料トライアル判定ロジック
     const fs = require('fs');
     const USERS_FILE = './users.json';
     if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, JSON.stringify({}));
@@ -197,6 +198,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Yuj Bot with Emotion-Aware Yoga Coach is running on port ${PORT}`);
 });
+
 
 
 
