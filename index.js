@@ -253,13 +253,22 @@ app.get("/monthly-task", async (req, res) => {
     },
   });
 
-  res.send(`✅ 合言葉を更新しました：${newCode}`);
-});
 
 // ✅ 動作確認
 app.get("/", (req, res) => {
   res.send("Yuj Bot is running 🧘‍♀️");
 });
 
+// ✅ 管理者専用：月次処理（合言葉リセット＋バックアップ）
+app.get("/monthly-task", async (req, res) => {
+  // …（中略）
+  res.send(`✅ 合言葉を更新しました：${newCode}`);
+});
+
+// ✅ ポート設定
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✅ Yuj Bot is running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`✅ Yuj Bot is running on port ${PORT}`);
+});
+
+
