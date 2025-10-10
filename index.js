@@ -249,48 +249,6 @@ async function runMonthlyTask(res) {
   res.send(`✅ 合言葉を更新しました：${newCode}`);
 }
 
-// ✅ 管理者専用：月次処理（合言葉リセット＋バックアップ）
-app.get("/monthly-task", async (req, res) => {
-  if (req.query.key !== ADMIN_SECRET) return res.status(403).send("Unauthorized");
-
-  // 合言葉生成
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-  const newCode = `YUJ-${y}-${m}-${random}`;
-
-  // バックアップ
-  const backupPath = `${BACKUP_DIR}/users-${new Date().toISOString().split("T")[0]}.json`;
-  if (fs.existsSync(USERS_FILE)) fs.copyFileSync(USERS_FILE, backupPath);
-
-  // 有料フラグをリセット
-  const users = JSON.parse(fs.readFileSync(USERS_FILE, "utf-8"));
-  for (const userId in users) {
-    users[userId].isPaid = false;
-    delete users[userId].paidDate;
-  }
-  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
-
-  // 管理者通知
-  const message = {
-    to: "【管理者LINEのuserId】", // ← あとで自分のuserIdに置き換える
-    messages: [
-      {
-        type: "text",
-        text: `🧘‍♀️ 今月のYujプレミアム合言葉：\n\n${newCode}\n\nnoteの有料記事に貼り替えてください🌿`,
-      },
-    ],
-  };
-  await axios.post("https://api.line.me/v2/bot/message/push", message, {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${LINE_ACCESS_TOKEN}`,
-    },
-  });
-
-  res.send(`✅ 合言葉を更新しました：${newCode}`);
-});
 
 // ✅ 動作確認
 app.get("/", (req, res) => {
@@ -307,5 +265,6 @@ app.get("/monthly-task", async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Yuj Bot is running on port ${PORT}`));
+
 
 
