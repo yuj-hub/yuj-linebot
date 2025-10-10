@@ -29,7 +29,12 @@ app.post("/webhook", async (req, res) => {
 
         // 🧘‍♀️ 有料ユーザー登録（合言葉認証）
         if (userMessage === PAID_CODE) {
-          users[userId] = { ...users[userId], isPaid: true };
+  users[userId] = {
+    ...users[userId],
+    isPaid: true,
+    paidDate: new Date().toISOString(), // ← 登録日を保存
+  };
+
           fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
 
           const replyMessage = {
@@ -81,6 +86,38 @@ app.post("/webhook", async (req, res) => {
           });
           return;
         }
+        
+// 💎 有料期限チェック
+if (users[userId]?.isPaid && users[userId]?.paidDate) {
+  const paidDate = new Date(users[userId].paidDate);
+  const now = new Date();
+  const diffDays = (now - paidDate) / (1000 * 60 * 60 * 24);
+
+  if (diffDays > 30) {
+    users[userId].isPaid = false;
+    delete users[userId].paidDate; // 古い記録削除
+    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+
+    const replyMessage = {
+      replyToken: event.replyToken,
+      messages: [
+        {
+          type: "text",
+          text: `🕊️ プレミアム期間が終了しました。\n\nまたYujと穏やかな時間を過ごしたい方は、\nnoteの会員ページから今月の合言葉をご確認ください💌\n\nhttps://example.com/premium`,
+        },
+      ],
+    };
+
+    await axios.post("https://api.line.me/v2/bot/message/reply", replyMessage, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${LINE_ACCESS_TOKEN}`,
+      },
+    });
+
+    return;
+  }
+}
 
         // 🔸「ヨガ」または「メニュー」入力でボタン表示
         if (userMessage === "ヨガ" || userMessage === "メニュー") {
@@ -215,3 +252,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Yuj Bot is running on port ${PORT}`);
 });
+
