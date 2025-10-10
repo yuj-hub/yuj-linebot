@@ -294,8 +294,6 @@ app.get("/monthly-task", async (req, res) => {
 
   const USERS_FILE = "./users.json";
   const BACKUP_DIR = "./backups";
-  const fs = require("fs");
-  const axios = require("axios");
 
   if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR);
 
@@ -341,6 +339,7 @@ app.get("/monthly-task", async (req, res) => {
 
   res.send(`✅ 合言葉を更新しました：${newCode}`);
 });
+
 
 
 
