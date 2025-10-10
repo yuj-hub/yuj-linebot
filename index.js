@@ -253,7 +253,6 @@ app.get("/monthly-task", async (req, res) => {
     },
   });
 
-
 // ✅ 動作確認
 app.get("/", (req, res) => {
   res.send("Yuj Bot is running 🧘‍♀️");
@@ -270,5 +269,6 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Yuj Bot is running on port ${PORT}`);
 });
+
 
 
