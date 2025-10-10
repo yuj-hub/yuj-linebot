@@ -214,40 +214,56 @@ async function reply(replyToken, messages) {
 }
 // ✅ 月次処理関数（関数名は自由だけど runMonthlyTask がわかりやすい）
 async function runMonthlyTask(res) {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-  const newCode = `YUJ-${y}-${m}-${random}`;
+  try {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const newCode = `YUJ-${y}-${m}-${random}`;
 
-  const backupPath = `${BACKUP_DIR}/users-${new Date().toISOString().split("T")[0]}.json`;
-  if (fs.existsSync(USERS_FILE)) fs.copyFileSync(USERS_FILE, backupPath);
+    const backupPath = `${BACKUP_DIR}/users-${new Date().toISOString().split("T")[0]}.json`;
+    if (fs.existsSync(USERS_FILE)) fs.copyFileSync(USERS_FILE, backupPath);
 
-  const users = JSON.parse(fs.readFileSync(USERS_FILE, "utf-8"));
-  for (const userId in users) {
-    users[userId].isPaid = false;
-    delete users[userId].paidDate;
-  }
-  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+    const users = JSON.parse(fs.readFileSync(USERS_FILE, "utf-8"));
+    for (const userId in users) {
+      users[userId].isPaid = false;
+      delete users[userId].paidDate;
+    }
+    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
 
-  const message = {
-    to: "【U5983f5cd5605eec930021acd6cdd6f68】", // ← あなたのLINE IDに置き換えてください
-    messages: [
-      {
-        type: "text",
-        text: `🧘‍♀️ 今月のYujプレミアム合言葉：\n\n${newCode}\n\nnoteの有料記事に貼り替えてください🌿`,
+    const message = {
+      to: "【U5983f5cd5605eec930021acd6cdd6f68】", // ← あなたのLINEユーザーIDに置き換える
+      messages: [
+        {
+          type: "text",
+          text: `🧘‍♀️ 今月のYujプレミアム合言葉：\n\n${newCode}\n\nnoteの有料記事に貼り替えてください🌿`,
+        },
+      ],
+    };
+
+    await axios.post("https://api.line.me/v2/bot/message/push", message, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${LINE_ACCESS_TOKEN}`,
       },
-    ],
-  };
-  await axios.post("https://api.line.me/v2/bot/message/push", message, {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${LINE_ACCESS_TOKEN}`,
-    },
-  });
+    });
 
-  res.send(`✅ 合言葉を更新しました：${newCode}`);
+    res.send(`✅ 合言葉を更新しました：${newCode}`);
+  } catch (error) {
+    console.error("🚨 LINE APIエラー発生！");
+
+    if (error.response) {
+      console.error("📩 ステータス:", error.response.status);
+      console.error("📄 データ:", JSON.stringify(error.response.data, null, 2));
+    } else if (error.request) {
+      console.error("❌ リクエストは送信されたがレスポンスがありません。");
+      console.error(error.request);
+    } else {
+      console.error("❌ エラー:", error.message);
+    }
+  }
 }
+
 
 
 // ✅ 動作確認
@@ -265,6 +281,7 @@ app.get("/monthly-task", async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Yuj Bot is running on port ${PORT}`));
+
 
 
 
