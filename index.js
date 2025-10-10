@@ -285,22 +285,8 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Yuj Bot is running on port ${PORT}`);
 });
-import cron from "node-cron";
 
-// ⏰ 毎月1日の午前0時に実行
-cron.schedule("0 0 1 * *", () => {
-  console.log("🧹 Monthly reset started...");
 
-  // バックアップ作成
-  const backupFile = `./backups/users_${new Date().toISOString().slice(0, 10)}.json`;
-  if (!fs.existsSync("./backups")) fs.mkdirSync("./backups");
-  fs.copyFileSync(USERS_FILE, backupFile);
-
-  // users.json初期化
-  fs.writeFileSync(USERS_FILE, JSON.stringify({}, null, 2));
-
-  console.log(`✅ users.json reset complete! Backup saved at ${backupFile}`);
-});
 
 
 
