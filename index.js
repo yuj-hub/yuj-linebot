@@ -232,7 +232,7 @@ async function runMonthlyTask(res) {
     fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
 
     const message = {
-      to: "【U5983f5cd5605eec930021acd6cdd6f68】", // ← あなたのLINEユーザーIDに置き換える
+      to: "U5983f5cd5605eec930021acd6cdd6f68", // ← あなたのLINEユーザーIDに置き換える
       messages: [
         {
           type: "text",
@@ -281,6 +281,7 @@ app.get("/monthly-task", async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Yuj Bot is running on port ${PORT}`));
+
 
 
 
