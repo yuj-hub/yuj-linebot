@@ -92,33 +92,39 @@ if (users[userId]?.isPaid && users[userId]?.paidDate) {
   const paidDate = new Date(users[userId].paidDate);
   const now = new Date();
   const diffDays = (now - paidDate) / (1000 * 60 * 60 * 24);
-  // 💌 満了リマインダー（25日目に1回だけ送る）
+   // 💌 満了リマインダー（25日目に朝だけ送る）
   if (diffDays > 25 && diffDays <= 26 && !users[userId].reminderSent) {
-    users[userId].reminderSent = true;
-    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+    const nowHour = new Date().getHours(); // 現在の時間（0〜23）
 
-    const replyMessage = {
-      replyToken: event.replyToken,
-      messages: [
-        {
-          type: "text",
-          text:
-            "💌 プレミアム期間がもうすぐ終了します。\n\n" +
-            "あと5日で心のヨガ時間がいったんお休みになります🕊️\n" +
-            "これからも続けたい方は、noteのページで\n" +
-            "今月の合言葉をチェックしてください🌸\n\n" +
-            "👉 https://example.com/premium",
+    // 朝7〜10時の間だけ送信
+    if (nowHour >= 7 && nowHour < 10) {
+      users[userId].reminderSent = true;
+      fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+
+      const replyMessage = {
+        replyToken: event.replyToken,
+        messages: [
+          {
+            type: "text",
+            text:
+              "💌 プレミアム期間がもうすぐ終了します。\n\n" +
+              "あと5日で心のヨガ時間がいったんお休みになります🕊️\n" +
+              "これからも続けたい方は、noteのページで\n" +
+              "今月の合言葉をチェックしてください🌸\n\n" +
+              "👉 https://example.com/premium",
+          },
+        ],
+      };
+
+      await axios.post("https://api.line.me/v2/bot/message/reply", replyMessage, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${LINE_ACCESS_TOKEN}`,
         },
-      ],
-    };
-
-    await axios.post("https://api.line.me/v2/bot/message/reply", replyMessage, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${LINE_ACCESS_TOKEN}`,
-      },
-    });
+      });
+    }
   }
+
 
   if (diffDays > 30) {
     users[userId].isPaid = false;
@@ -279,5 +285,6 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Yuj Bot is running on port ${PORT}`);
 });
+
 
 
