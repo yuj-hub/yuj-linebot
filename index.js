@@ -285,6 +285,63 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Yuj Bot is running on port ${PORT}`);
 });
+// ✅ 管理者専用：月次処理（合言葉リセット＋バックアップ）
+app.get("/monthly-task", async (req, res) => {
+  const ADMIN_SECRET = process.env.ADMIN_SECRET || "yuj-secret"; // 認証キー
+  if (req.query.key !== ADMIN_SECRET) {
+    return res.status(403).send("Unauthorized");
+  }
+
+  const USERS_FILE = "./users.json";
+  const BACKUP_DIR = "./backups";
+  const fs = require("fs");
+  const axios = require("axios");
+
+  if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR);
+
+  // 🔹 合言葉生成
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+  const newCode = `YUJ-${y}-${m}-${random}`;
+
+  // 🔹 users.jsonをバックアップ
+  if (fs.existsSync(USERS_FILE)) {
+    const backupPath = `${BACKUP_DIR}/users-${new Date().toISOString().split("T")[0]}.json`;
+    fs.copyFileSync(USERS_FILE, backupPath);
+  }
+
+  // 🔹 users.jsonをリセット
+  const users = fs.existsSync(USERS_FILE)
+    ? JSON.parse(fs.readFileSync(USERS_FILE, "utf-8"))
+    : {};
+  for (const userId in users) {
+    if (users[userId].isPaid) users[userId].isPaid = false;
+  }
+  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+
+  // 🔹 管理者にLINE通知
+  const message = {
+    to: "【あなたのLINEユーザーID】", // ← あとで設定
+    messages: [
+      {
+        type: "text",
+        text: `🧘‍♀️ 今月のYujプレミアム合言葉：\n\n${newCode}\n\nnoteの有料記事に貼り替えてください🌿`,
+      },
+    ],
+  };
+
+  await axios.post("https://api.line.me/v2/bot/message/push", message, {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${process.env.LINE_ACCESS_TOKEN}`,
+    },
+  });
+
+  res.send(`✅ 合言葉を更新しました：${newCode}`);
+});
+
 
 
 
