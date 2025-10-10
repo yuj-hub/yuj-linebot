@@ -213,6 +213,9 @@ async function reply(replyToken, messages) {
   );
 }
 
+// ✅ 管理者専用：月次処理（合言葉リセット＋バックアップ）
+app.get("/monthly-task", async (req, res) => {
+  if (req.query.key !== ADMIN_SECRET) return res.status(403).send("Unauthorized");
 
   // 合言葉生成
   const now = new Date();
@@ -261,6 +264,3 @@ app.get("/", (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Yuj Bot is running on port ${PORT}`));
 
-// ✅ 管理者専用：月次処理（合言葉リセット＋バックアップ）
-app.get("/monthly-task", async (req, res) => {
-  if (req.query.key !== ADMIN_SECRET) return res.status(403).send("Unauthorized");
