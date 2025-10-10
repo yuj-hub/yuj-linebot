@@ -321,7 +321,7 @@ app.get("/monthly-task", async (req, res) => {
 
   // 🔹 管理者にLINE通知
   const message = {
-    to: "【あなたのLINEユーザーID】", // ← あとで設定
+    to: "【dub-y】", // ← あとで設定
     messages: [
       {
         type: "text",
@@ -339,6 +339,7 @@ app.get("/monthly-task", async (req, res) => {
 
   res.send(`✅ 合言葉を更新しました：${newCode}`);
 });
+
 
 
 
