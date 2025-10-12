@@ -69,7 +69,7 @@ if (userMessage === currentCode) {
 
       const startDate = new Date(users[userId].startDate);
       const now = new Date();
-      const diffDays = (now - startDate) / (1000 * 60 * 60 * 24);
+      const diffDays = 4; // ← 強制的に4日経過したことにする
       const withinTrial = diffDays <= 3;
 
       if (!withinTrial && !users[userId]?.isPaid) {
@@ -290,6 +290,7 @@ app.get("/monthly-task", async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Yuj Bot is running on port ${PORT}`));
+
 
 
 
