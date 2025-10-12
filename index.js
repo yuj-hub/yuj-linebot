@@ -103,7 +103,7 @@ if (userMessage === currentCode) {
                   "あと5日で心のヨガ時間がいったんお休みになります🕊️\n" +
                   "これからも続けたい方は、noteのページで\n" +
                   "今月の合言葉をチェックしてください🌸\n\n" +
-                  "👉 https://example.com/premium",
+                  "👉 https://note.com/yuj_yoga_ai/n/n3b26135421ef",
               },
             ]);
           }
@@ -291,6 +291,7 @@ app.get("/monthly-task", async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Yuj Bot is running on port ${PORT}`));
+
 
 
 
