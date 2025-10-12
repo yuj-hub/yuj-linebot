@@ -30,29 +30,36 @@ app.post("/webhook", async (req, res) => {
       const userId = event.source.userId;
       const users = JSON.parse(fs.readFileSync(USERS_FILE, "utf-8"));
 
-      // 💎 有料登録用の合言葉
-      const PAID_CODE = "YUJ500"; // ← Renderの環境変数でも可
+// 💎 有料登録用の合言葉をJSONから読み込む
+let currentCode = "";
+try {
+  const data = fs.readFileSync("./current_code.json", "utf-8");
+  currentCode = JSON.parse(data).code;
+} catch {
+  currentCode = null;
+}
 
-      // 🧘‍♀️ 有料ユーザー登録（合言葉認証）
-      if (userMessage === PAID_CODE) {
-        users[userId] = {
-          ...users[userId],
-          isPaid: true,
-          paidDate: new Date().toISOString(),
-          reminderSent: false,
-        };
+// 🧘‍♀️ 有料ユーザー登録（合言葉認証）
+if (userMessage === currentCode) {
+  users[userId] = {
+    ...users[userId],
+    isPaid: true,
+    paidDate: new Date().toISOString(),
+    reminderSent: false,
+  };
 
-        fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
 
-        await reply(event.replyToken, [
-          {
-            type: "text",
-            text:
-              "🌸 プレミアム登録ありがとうございます！\nこれから毎日、心を整えるメッセージをお届けします💌",
-          },
-        ]);
-        return;
-      }
+  await reply(event.replyToken, [
+    {
+      type: "text",
+      text:
+        "🌸 プレミアム登録ありがとうございます！\nこれから毎日、心を整えるメッセージをお届けします💌",
+    },
+  ]);
+  return;
+}
+
 
       // 🧘‍♀️ 無料トライアル判定ロジック
       if (!users[userId]) {
@@ -248,6 +255,8 @@ async function runMonthlyTask(res) {
       },
     });
 
+    fs.writeFileSync("./current_code.json", JSON.stringify({ code: newCode }));
+
     res.send(`✅ 合言葉を更新しました：${newCode}`);
   } catch (error) {
     console.error("🚨 LINE APIエラー発生！");
@@ -281,6 +290,7 @@ app.get("/monthly-task", async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Yuj Bot is running on port ${PORT}`));
+
 
 
 
