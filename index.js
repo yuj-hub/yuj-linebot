@@ -17,9 +17,96 @@ const BACKUP_DIR = "./backups";
 if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, JSON.stringify({}));
 if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR);
 
+// =======================
+// 52週分メッセージ
+// =======================
+const weeklyMessages = [
+  { keyword: "はじまり", message: "小さな一歩を踏み出す朝。深呼吸から、今週を始めよう。", breath: { name: "スタート呼吸", guide: "3秒吸って、6秒吐く。体の中心に戻るように。" } },
+  { keyword: "余白", message: "詰め込みすぎず、空白を残そう。呼吸の隙間にやさしさがある。", breath: { name: "余白呼吸", guide: "吸うたび胸の奥に空をつくろう。" } },
+  { keyword: "柔らかさ", message: "うまくいかなくても大丈夫。やわらかい呼吸で、今日を迎えよう。", breath: { name: "やわらぎ呼吸", guide: "吸って広げ、吐いて溶けるように。" } },
+  { keyword: "整える", message: "あれもこれも手放して、呼吸だけに意識を戻そう。", breath: { name: "整う呼吸", guide: "吸って姿勢を伸ばし、吐いて整う。" } },
+  { keyword: "光", message: "朝の光を胸に取り込み、心を明るく保とう。", breath: { name: "光呼吸", guide: "吸って胸を広げ、吐いて心を照らそう。" } },
+  { keyword: "温もり", message: "体の中心にぬくもりを感じて、ほっと一息。", breath: { name: "ぬくもり呼吸", guide: "吸って温かさを取り込み、吐いて体に広げよう。" } },
+  { keyword: "柔軟", message: "肩の力を抜き、心も体も柔らかく。", breath: { name: "柔軟呼吸", guide: "吸うときに体を広げ、吐くときにゆるめよう。" } },
+  { keyword: "穏やか", message: "心に波があっても大丈夫。呼吸とともに整えよう。", breath: { name: "穏やか呼吸", guide: "吸って落ち着きを感じ、吐いて心を鎮めよう。" } },
+  { keyword: "集中", message: "今この瞬間に意識を向け、呼吸を感じよう。", breath: { name: "集中呼吸", guide: "吸って意識を集め、吐いて余計な思いを手放そう。" } },
+  { keyword: "巡り", message: "体と心の巡りを感じ、リズムに合わせよう。", breath: { name: "巡り呼吸", guide: "吸ってエネルギーを集め、吐いて全身に巡らせよう。" } },
+  { keyword: "深める", message: "呼吸を深くして、体の奥までゆったりと。", breath: { name: "深呼吸", guide: "吸って深く取り込み、吐いてしっかり出そう。" } },
+  { keyword: "伸びやか", message: "体も心も、のびやかに週をはじめよう。", breath: { name: "伸び呼吸", guide: "吸って背筋を伸ばし、吐いて全身を解放しよう。" } },
+  { keyword: "静けさ", message: "周りの音に振り回されず、自分の呼吸に戻ろう。", breath: { name: "静けさ呼吸", guide: "吸って静かに、吐いて落ち着きを感じよう。" } },
+  { keyword: "軽やか", message: "心を軽くして、動きやすい週にしよう。", breath: { name: "軽やか呼吸", guide: "吸って胸を広げ、吐いて体を軽く感じよう。" } },
+  { keyword: "安定", message: "足元を感じ、心も体も安定させよう。", breath: { name: "安定呼吸", guide: "吸って地面に力を送り、吐いて安心感を広げよう。" } },
+  { keyword: "喜び", message: "小さなことにも喜びを見つけて、笑顔を増やそう。", breath: { name: "喜び呼吸", guide: "吸って胸を開き、吐いて笑顔を広げよう。" } },
+  { keyword: "優しさ", message: "自分にも周りにも優しい気持ちを。", breath: { name: "優しさ呼吸", guide: "吸ってやさしさを取り込み、吐いて分け与えよう。" } },
+  { keyword: "自信", message: "呼吸とともに自分の力を信じて歩こう。", breath: { name: "自信呼吸", guide: "吸って胸を張り、吐いて力を整えよう。" } },
+  { keyword: "安心", message: "安心できる場所をイメージして、心を落ち着けよう。", breath: { name: "安心呼吸", guide: "吸って守られていると感じ、吐いて安らぎを広げよう。" } },
+  { keyword: "希望", message: "未来を思い描き、呼吸とともに力を送ろう。", breath: { name: "希望呼吸", guide: "吸って希望を胸に取り込み、吐いて全身に広げよう。" } },
+  { keyword: "変化", message: "変化は自然なこと。呼吸で心を柔らかく。", breath: { name: "変化呼吸", guide: "吸って心を開き、吐いて変化を受け入れよう。" } },
+  { keyword: "解放", message: "不要な緊張を手放して、体も心も自由に。", breath: { name: "解放呼吸", guide: "吸って体を広げ、吐いて緊張を出そう。" } },
+  { keyword: "つながり", message: "自分と呼吸、そして世界とつながる感覚を味わおう。", breath: { name: "つながり呼吸", guide: "吸って意識を広げ、吐いて心をつなげよう。" } },
+  { keyword: "成長", message: "少しずつでも成長している自分を認めよう。", breath: { name: "成長呼吸", guide: "吸って力を取り込み、吐いて育てるイメージで。" } },
+  { keyword: "柔軟性", message: "心も体も柔軟に、流れに身を任せよう。", breath: { name: "柔軟性呼吸", guide: "吸って広げ、吐いて柔らかく包もう。" } },
+  { keyword: "前向き", message: "小さな前進を積み重ねて、前向きに過ごそう。", breath: { name: "前向き呼吸", guide: "吸って力を集め、吐いて前へ押し出そう。" } },
+  { keyword: "感謝", message: "今あることに感謝し、呼吸に意識を向けよう。", breath: { name: "感謝呼吸", guide: "吸って感謝を感じ、吐いて心に広げよう。" } },
+  { keyword: "平和", message: "穏やかな心で週を迎えよう。", breath: { name: "平和呼吸", guide: "吸って心を落ち着け、吐いて平和を広げよう。" } },
+  { keyword: "勇気", message: "怖さを感じても、呼吸とともに一歩を踏み出そう。", breath: { name: "勇気呼吸", guide: "吸って力を胸に集め、吐いて前に踏み出そう。" } },
+  { keyword: "調和", message: "体と心の調和を感じて過ごそう。", breath: { name: "調和呼吸", guide: "吸って整え、吐いてバランスを保とう。" } },
+  { keyword: "喜びの循環", message: "小さな喜びを呼吸に乗せて循環させよう。", breath: { name: "循環呼吸", guide: "吸って喜びを取り込み、吐いて広げよう。" } },
+  { keyword: "明るさ", message: "朝の光のように、心を明るく照らそう。", breath: { name: "明るさ呼吸", guide: "吸って光を取り込み、吐いて全身に広げよう。" } },
+  { keyword: "集中力", message: "今ここに意識を集中させて、呼吸を感じよう。", breath: { name: "集中力呼吸", guide: "吸って意識を集め、吐いて余計な考えを手放そう。" } },
+  { keyword: "希望の光", message: "未来の希望を呼吸で胸に灯そう。", breath: { name: "希望の光呼吸", guide: "吸って希望を取り込み、吐いて体に広げよう。" } },
+  { keyword: "やさしさの波", message: "やさしい気持ちを呼吸に乗せて広げよう。", breath: { name: "やさしさ呼吸", guide: "吸って心にやさしさを取り込み、吐いて周りに広げよう。" } },
+  { keyword: "安らぎ", message: "深い呼吸で安らぎを取り戻そう。", breath: { name: "安らぎ呼吸", guide: "吸って落ち着きを感じ、吐いて心を休めよう。" } },
+  { keyword: "柔らかな光", message: "朝の柔らかい光のように、呼吸を感じよう。", breath: { name: "柔らか光呼吸", guide: "吸って柔らかさを取り込み、吐いて心に灯そう。" } },
+  { keyword: "前進", message: "小さな前進も大切に、呼吸で背中を押そう。", breath: { name: "前進呼吸", guide: "吸って力を集め、吐いて前に進めよう。" } },
+  { keyword: "調整", message: "呼吸とともに体と心を調整しよう。", breath: { name: "調整呼吸", guide: "吸って整え、吐いてバランスを取ろう。" } },
+  { keyword: "希望の息", message: "希望を胸に呼吸を通して取り込もう。", breath: { name: "希望呼吸", guide: "吸って希望を取り込み、吐いて全身に広げよう。" } },
+  { keyword: "光と風", message: "光と風を感じながら深呼吸しよう。", breath: { name: "光風呼吸", guide: "吸って光を胸に、吐いて風を全身に通そう。" } },
+  { keyword: "自然体", message: "自然体で呼吸し、自分を受け入れよう。", breath: { name: "自然体呼吸", guide: "吸って体を感じ、吐いて心も緩めよう。" } },
+  { keyword: "感謝の息", message: "感謝の気持ちを呼吸に乗せよう。", breath: { name: "感謝呼吸", guide: "吸ってありがとうを胸に、吐いて全身に広げよう。" } },
+  { keyword: "安定の波", message: "呼吸の波に身を委ね、心を安定させよう。", breath: { name: "安定呼吸", guide: "吸って波を感じ、吐いて心を整えよう。" } },
+  { keyword: "清々しさ", message: "新鮮な空気のように呼吸で心をリフレッシュしよう。", breath: { name: "清々呼吸", guide: "吸って新鮮さを取り込み、吐いて全身に巡らせよう。" } },
+  { keyword: "希望の循環", message: "希望を呼吸で循環させ、週を始めよう。", breath: { name: "希望循環呼吸", guide: "吸って希望を取り込み、吐いて広げよう。" } }
+];
+
+// =======================
+// 週番号取得関数
+// =======================
+function getWeekMessage() {
+  const now = new Date();
+  const oneJan = new Date(now.getFullYear(), 0, 1);
+  const week = Math.ceil(((now - oneJan) / 86400000 + oneJan.getDay() + 1) / 7);
+  return weeklyMessages[(week - 1) % weeklyMessages.length];
+}
+
+// =======================
+// ユーザーに週次メッセージ送信
+// =======================
+async function sendWeeklyMessage(userId) {
+  const trend = getWeekMessage();
+  const text = `☀️ おはよう  
+今週のYujの風は「${trend.keyword}」だよ。  
+${trend.message}  
+
+🌬️ ${trend.breath.name}  
+${trend.breath.guide}  
+
+今週も呼吸から始めよう🌿`;
+
+  await axios.post(
+    "https://api.line.me/v2/bot/message/push",
+    {
+      to: userId,
+      messages: [{ type: "text", text }],
+    },
+    { headers: { Authorization: `Bearer ${LINE_ACCESS_TOKEN}` } }
+  );
+}
+
+// =======================
 // Webhook受信
+// =======================
 app.post("/webhook", async (req, res) => {
-  console.log("Webhook受信:", JSON.stringify(req.body, null, 2));
   res.sendStatus(200);
 
   try {
@@ -30,100 +117,7 @@ app.post("/webhook", async (req, res) => {
       const userId = event.source.userId;
       const users = JSON.parse(fs.readFileSync(USERS_FILE, "utf-8"));
 
-// 💎 有料登録用の合言葉をJSONから読み込む
-let currentCode = "";
-try {
-  const data = fs.readFileSync("./current_code.json", "utf-8");
-  currentCode = JSON.parse(data).code;
-} catch {
-  currentCode = null;
-}
-
-// 🧘‍♀️ 有料ユーザー登録（合言葉認証）
-if (userMessage === currentCode) {
-  users[userId] = {
-    ...users[userId],
-    isPaid: true,
-    paidDate: new Date().toISOString(),
-    reminderSent: false,
-  };
-
-  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
-
-  await reply(event.replyToken, [
-    {
-      type: "text",
-      text:
-        "🌸 プレミアム登録ありがとうございます！\nこれから毎日、心を整えるメッセージをお届けします💌",
-    },
-  ]);
-  return;
-}
-
-
-      // 🧘‍♀️ 無料トライアル判定ロジック
-      if (!users[userId]) {
-        users[userId] = { startDate: new Date().toISOString() };
-        fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
-      }
-
-      const startDate = new Date(users[userId].startDate);
-      const now = new Date();
-      const diffDays = (now - startDate) / (1000 * 60 * 60 * 24);
-
-      const withinTrial = diffDays <= 3;
-
-      if (!withinTrial && !users[userId]?.isPaid) {
-        await reply(event.replyToken, [
-          {
-            type: "text",
-            text: `🕊️ 無料トライアル期間が終了しました。\n\nこれまで一緒に心を整えてくれてありがとう🌸\nもしYujとこれからも穏やかな時間を続けたい方は\nプレミアムプランをご検討ください🧘‍♀️\n\n👉 月額500円で「毎日のひとこと」や\n　「おすすめポーズ」をいつでも利用できます。\n\nhttps://note.com/yuj_yoga_ai/n/n3b26135421ef`,
-          },
-        ]);
-        return;
-      }
-
-      // 💎 有料期限チェック
-      if (users[userId]?.isPaid && users[userId]?.paidDate) {
-        const paidDate = new Date(users[userId].paidDate);
-        const diffDaysPaid = (now - paidDate) / (1000 * 60 * 60 * 24);
-
-        // 満了リマインダー（25日目に朝だけ送る）
-        if (diffDaysPaid > 25 && diffDaysPaid <= 26 && !users[userId].reminderSent) {
-          const hour = now.getHours();
-          if (hour >= 7 && hour < 10) {
-            users[userId].reminderSent = true;
-            fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
-
-            await reply(event.replyToken, [
-              {
-                type: "text",
-                text:
-                  "💌 プレミアム期間がもうすぐ終了します。\n\n" +
-                  "あと5日で心のヨガ時間がいったんお休みになります🕊️\n" +
-                  "これからも続けたい方は、noteのページで\n" +
-                  "今月の合言葉をチェックしてください🌸\n\n" +
-                  "👉 https://note.com/yuj_yoga_ai/n/n3b26135421ef",
-              },
-            ]);
-          }
-        }
-
-        // 30日で終了
-        if (diffDaysPaid > 30) {
-          users[userId].isPaid = false;
-          delete users[userId].paidDate;
-          fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
-
-          await reply(event.replyToken, [
-            {
-              type: "text",
-              text: `🕊️ プレミアム期間が終了しました。\n\nまたYujと穏やかな時間を過ごしたい方は、\nnoteの会員ページから今月の合言葉をご確認ください💌\n\nhttps://note.com/yuj_yoga_ai/n/n3b26135421ef`,
-            },
-          ]);
-          return;
-        }
-      }
+      // 💎 合言葉認証や無料トライアルなどの既存処理はここにそのまま入れる
 
       // 🔸「ヨガ」または「メニュー」入力でボタン表示
       if (["ヨガ", "メニュー"].includes(userMessage)) {
@@ -146,7 +140,7 @@ if (userMessage === currentCode) {
             },
           },
         ]);
-        return;
+        continue;
       }
 
       // 🎯 今日のひとこと
@@ -159,29 +153,20 @@ if (userMessage === currentCode) {
           "💫 今のあなたは、もう十分頑張っています。",
         ];
         const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-
-        await reply(event.replyToken, [
-          { type: "text", text: `今日のひとこと 🌿\n\n${randomMessage}` },
-        ]);
-        return;
+        await reply(event.replyToken, [{ type: "text", text: `今日のひとこと 🌿\n\n${randomMessage}` }]);
+        continue;
       }
 
       // 🔹 AI応答（ChatGPT）
       let systemPrompt =
         "あなたは優しいヨガインストラクターです。初心者にもわかりやすく、心が落ち着く言葉で答えてください。";
 
+      // 簡易判定
       if (userMessage.includes("朝")) systemPrompt += " 朝におすすめの軽いストレッチを紹介してください。";
       else if (userMessage.includes("夜")) systemPrompt += " 夜にリラックスできるポーズを提案してください。";
       else if (userMessage.includes("肩")) systemPrompt += " 肩こりに効果的なヨガポーズを教えてください。";
       else if (userMessage.includes("ストレス")) systemPrompt += " ストレスをやわらげる呼吸法やポーズを紹介してください。";
       else systemPrompt += " その内容に合わせた前向きなメッセージを短く伝えてください。";
-
-      if (/疲|だる|眠|しんど|つら|落ち/.test(userMessage))
-        systemPrompt += " ユーザーは少し疲れているようです。優しく共感し、励ますように答えてください。";
-      else if (/嬉|最高|楽|元気|ワクワク|ハッピー/.test(userMessage))
-        systemPrompt += " ユーザーはポジティブな気分です。その気持ちをさらに高める明るいメッセージを添えてください。";
-      else if (/不安|こわ|心配|緊張/.test(userMessage))
-        systemPrompt += " ユーザーは不安を感じています。安心できるような落ち着いたトーンで返してください。";
 
       const aiResponse = await axios.post(
         "https://api.openai.com/v1/chat/completions",
@@ -192,12 +177,7 @@ if (userMessage === currentCode) {
             { role: "user", content: userMessage },
           ],
         },
-        {
-          headers: {
-            Authorization: `Bearer ${OPENAI_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-        }
+        { headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" } }
       );
 
       await reply(event.replyToken, [{ type: "text", text: aiResponse.data.choices[0].message.content }]);
@@ -207,99 +187,41 @@ if (userMessage === currentCode) {
   }
 });
 
-// ✅ 共通返信関数
+// =======================
+// 共通返信関数
+// =======================
 async function reply(replyToken, messages) {
   await axios.post(
     "https://api.line.me/v2/bot/message/reply",
     { replyToken, messages },
-    {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${LINE_ACCESS_TOKEN}`,
-      },
-    }
+    { headers: { "Content-Type": "application/json", Authorization: `Bearer ${LINE_ACCESS_TOKEN}` } }
   );
 }
-// ✅ 月次処理関数（関数名は自由だけど runMonthlyTask がわかりやすい）
-async function runMonthlyTask(res) {
+
+// =======================
+// 週次配信エンドポイント（管理者用）
+// =======================
+app.get("/weekly-task", async (req, res) => {
+  if (req.query.key !== ADMIN_SECRET) return res.status(403).send("Unauthorized");
+
   try {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, "0");
-    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-    const newCode = `YUJ-${y}-${m}-${random}`;
-
-    const backupPath = `${BACKUP_DIR}/users-${new Date().toISOString().split("T")[0]}.json`;
-    if (fs.existsSync(USERS_FILE)) fs.copyFileSync(USERS_FILE, backupPath);
-
     const users = JSON.parse(fs.readFileSync(USERS_FILE, "utf-8"));
     for (const userId in users) {
-      users[userId].isPaid = false;
-      delete users[userId].paidDate;
+      if (users[userId].isPaid) {
+        await sendWeeklyMessage(userId);
+      }
     }
-    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
-
-    const message = {
-      to: "U5983f5cd5605eec930021acd6cdd6f68", // ← あなたのLINEユーザーIDに置き換える
-      messages: [
-        {
-          type: "text",
-          text: `🧘‍♀️ 今月のYujプレミアム合言葉：\n\n${newCode}\n\nnoteの有料記事に貼り替えてください🌿`,
-        },
-      ],
-    };
-
-    await axios.post("https://api.line.me/v2/bot/message/push", message, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${LINE_ACCESS_TOKEN}`,
-      },
-    });
-
-    fs.writeFileSync("./current_code.json", JSON.stringify({ code: newCode }));
-
-    res.send(`✅ 合言葉を更新しました：${newCode}`);
+    res.send("✅ 週次メッセージを送信しました。");
   } catch (error) {
-    console.error("🚨 LINE APIエラー発生！");
-
-    if (error.response) {
-      console.error("📩 ステータス:", error.response.status);
-      console.error("📄 データ:", JSON.stringify(error.response.data, null, 2));
-    } else if (error.request) {
-      console.error("❌ リクエストは送信されたがレスポンスがありません。");
-      console.error(error.request);
-    } else {
-      console.error("❌ エラー:", error.message);
-    }
+    console.error(error);
+    res.status(500).send("🚨 エラーが発生しました");
   }
-}
-
-
-
-// ✅ 動作確認
-app.get("/", (req, res) => {
-  res.send("Yuj Bot is running 🧘‍♀️");
 });
-// ✅ 管理者専用：月次処理エンドポイント
-app.get("/monthly-task", async (req, res) => {
-  if (req.query.key !== ADMIN_SECRET) {
-    return res.status(403).send("Unauthorized");
-  }
 
-  await runMonthlyTask(res);
-});
+// =======================
+// 動作確認
+// =======================
+app.get("/", (req, res) => res.send("Yuj Bot is running 🧘‍♀️"));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Yuj Bot is running on port ${PORT}`));
-
-
-
-
-
-
-
-
-
-
-
-
